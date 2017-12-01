@@ -1,4 +1,5 @@
 import java.math.BigDecimal;
+import java.util.ArrayList;
 
 public class Room {
 
@@ -10,6 +11,8 @@ public class Room {
 	public BigDecimal basePrice;
 	public String decor;
 	public float popluarity;
+	public ArrayList<BigDecimal> mr = new ArrayList<BigDecimal>();
+	public BigDecimal totalRev;
 
 	public Room(String roomCode, String roomName, int beds, String bedType, int maxOcc, BigDecimal basePrice,
 			String decor) {
@@ -87,5 +90,12 @@ public class Room {
 		this.decor = decor;
 	}
 
-}
+	public float getTotalRev() {
+		Float total = (float) 0;
+		for (BigDecimal mrData : mr) {
+			total += mrData.floatValue();
+		}
+		return total;
+	}
 
+}

@@ -1,5 +1,4 @@
 import java.math.BigDecimal;
-import java.sql.Connection;
 import java.sql.Date;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -15,6 +14,7 @@ import java.util.Scanner;
 public class InnReservations {
 	static ArrayList<Room> roomList = new ArrayList<Room>();
 	static ArrayList<Reservation> reservationList = new ArrayList<Reservation>();
+	static int baseCode = 10000;
 
 	private static void PrintMenu() {
 		System.out.println("+++ MAIN MENU +++\nPress the key numbers for following options");
@@ -29,6 +29,14 @@ public class InnReservations {
 		String tempString = arr[0];
 		String output = tempString.replaceAll("[^a-zA-Z]", "");
 		return output;
+	}
+
+	private static Room GetRoomFromCode(String roomCode) {
+		for (Room room : roomList) {
+			if (room.RoomCode.equals(roomCode))
+				return room;
+		}
+		return null;
 	}
 
 	private static void PrintReservationList() {
@@ -123,7 +131,7 @@ public class InnReservations {
 						.add(new Reservation(CODE, Room, CheckIn, CheckOut, Rate, LastName, FirstName, Adults, Kids));
 			}
 
-			PrintReservationList();
+			// PrintReservationList();
 
 		} catch (Exception e) {
 			System.out.println("Error Populating Reservation List...Exiting...");
@@ -176,33 +184,98 @@ public class InnReservations {
 
 		try {
 			java.sql.Statement MakeReservation = conn.createStatement();
-			String firstName, lastName, roomCode, bedType;
-			Date checkIn, checkOut;
+			String firstName, lastName, roomCode = "", bedType = "", tempDate, tempString, p1, p2, p3, p4, p5;
+			Date checkIn = null, checkOut = null;
 			int children, adults;
+			Room room;
+			ArrayList<Room> availableRooms = new ArrayList<Room>();
 
 			System.out.println("Enter first name...");
-			firstName = sc.next();
+			firstName = SanitizeString(sc.nextLine()).toUpperCase();
+
 			System.out.println("Enter last name...");
-			lastName = sc.next();
+			lastName = SanitizeString(sc.nextLine()).toUpperCase();
+
 			System.out.println("Enter Room Code or Any for no preference...");
-			roomCode = sc.next().toUpperCase();
+			tempString = sc.nextLine();
+			if (tempString.length() == 3)
+				roomCode = SanitizeString(tempString).substring(0, 3).toUpperCase();
+
 			System.out.println("Enter desired bed type or Any for no preference...");
-			bedType = sc.next();
+			tempString = sc.nextLine();
+			if (tempString.length() != 0)
+				bedType = SanitizeString(tempString).substring(0, 1).toUpperCase();
+
 			System.out.println("Enter desired check in date(mm/dd/yyyy)...");
 			DateFormat df = new SimpleDateFormat("mm/dd/yyyy");
-			checkIn = new java.sql.Date(df.parse(sc.next()).getTime());
-			System.out.println("Enter deired check out date(mm/dd/yyyy)...");
-			checkOut = new java.sql.Date(df.parse(sc.next()).getTime());
+			tempDate = sc.nextLine();
+			if (tempDate.length() != 0)
+				checkIn = new java.sql.Date(df.parse(tempDate).getTime());
+
+			System.out.println("Enter desired check out date(mm/dd/yyyy)...");
+			tempDate = sc.nextLine();
+			if (tempDate.length() != 0)
+				checkOut = new java.sql.Date(df.parse(tempDate).getTime());
+
 			System.out.println("Enter number of children...");
 			children = sc.nextInt();
+
 			System.out.println("Enter number of adults...");
 			adults = sc.nextInt();
 
-			// MakeReservation.executeQuery(sql)
+			if (children + adults > 4) {
+				System.out.println("No rooms available for more than 4 people");
+				return;
+			}
+
+			/*
+			 * if (roomCode.length() != 0) { p1 =
+			 * "SELECT Checkout FROM lab7_reservations WHERE Room = '"; p2 =
+			 * "' AND CheckIn < '"; p3 = "' ORDER BY Checkout DESC LIMIT 1"; p4 =
+			 * "' AND CheckIn > '"; p5 = "' ORDER BY CheckIn ASC LIMIT 1"; } else if
+			 * (bedType.length() != 0) { p1 =
+			 * "SELECT Checkout FROM lab7_reservations WHERE bedType = '"; p2 =
+			 * "' AND CheckIn < '"; p3 = "' ORDER BY Checkout DESC LIMIT 5"; p4 =
+			 * "' AND CheckIn > '"; p5 = "' ORDER BY CheckIn ASC LIMIT 5"; } else { p1 =
+			 * "SELECT Checkout FROM lab7_reservations WHERE Room = '"; p2 =
+			 * "' AND CheckIn < '"; p3 = "' ORDER BY Checkout DESC LIMIT 1"; p4 =
+			 * "' AND CheckIn > '"; p5 = "' ORDER BY CheckIn ASC LIMIT 1"; for (Room room :
+			 * roomList) { ResultSet rs1 = MakeReservation.executeQuery(p1 + room.RoomCode +
+			 * p2 + checkIn.toString() + p3); ResultSet rs2 =
+			 * MakeReservation.executeQuery(p1 + room.RoomCode + p4 + checkOut.toString() +
+			 * p3); if (rs1.next() && rs2.next()) { if (rs1.getDate(1).before(checkIn) &&
+			 * rs2.getDate(1).after(checkOut)) { availableRooms.add(room); } } }
+			 * 
+			 * for (Room room : availableRooms) { System.out.println("Room " + room.RoomName
+			 * + " is available"); } }
+			 */
+
+			// System.out.println(p1+ room); MakeReservation.executeQuery(p1 + )
+
+			room = GetRoomFromCode(roomCode);
+
+			System.out.println("========= Reservation Info =========");
+			System.out.println("First Name: " + firstName);
+			System.out.println("Last Name: " + lastName);
+			System.out.println("Room Code: " + roomCode);
+			System.out.println("Room Name: " + room.RoomName);
+			System.out.println("Bed Type: " + room.bedType);
+			System.out.println("Check In: " + checkIn.toString());
+			System.out.println("Check Out: " + checkOut.toString());
+			System.out.println("Adults: " + adults);
+			System.out.println("Children: " + children);
+			System.out.println("Total Cost: " + room.basePrice.floatValue() * ((checkOut.getTime() - checkIn.getTime())/(1000 * 60 * 60 * 24)));
+			System.out.println("========= Enter Y to confirm, N to cancel =========");
+			
+			if (sc.next() == "Y") {
+				MakeReservation.execute("INSERT INTO lab7_reservations (CODE, Room, CheckIn, CheckOut, Rate, LastName, FirstName, Adults, Kids) VALUES (" +
+						++baseCode + ", '" + roomCode + "' , '" + checkIn.toString() + "', '" + checkOut.toString() + "', " + room.basePrice + ", '" +
+						lastName + "', '" + firstName + "', " + adults + ", " + children + ")");
+			}
 
 		} catch (Exception e) {
 			System.out.println("Error Making Reservation...Returning to Main Menu...");
-			// e.printStackTrace();
+			e.printStackTrace();
 		}
 	}
 
@@ -321,7 +394,6 @@ public class InnReservations {
 			p1 = "SELECT SUM(DATEDIFF(Checkout, CheckIn) * Rate) FROM lab7_reservations WHERE Room = '";
 			p2 = "' AND YEAR(Checkout) = 2017 AND MONTH(Checkout) = ";
 
-
 			for (Room room : roomList) {
 				room.mr.clear();
 				for (int i = 1; i <= 12; i++) {
@@ -351,11 +423,11 @@ public class InnReservations {
 						"+-----------++-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+------------+%n");
 
 			}
-			
+
 			for (float mTotal : totalRevs) {
 				totalAnnualRev += mTotal;
 			}
-			
+
 			System.out.format(leftAlignFormat, "MONTHLY", totalRevs[0], totalRevs[1], totalRevs[2], totalRevs[3],
 					totalRevs[4], totalRevs[5], totalRevs[6], totalRevs[7], totalRevs[8], totalRevs[9], totalRevs[10],
 					totalRevs[11], totalAnnualRev);
@@ -363,7 +435,7 @@ public class InnReservations {
 					"+-----------++-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+------------+%n");
 
 			System.out.println("\n\n\n\n");
-			
+
 		} catch (SQLException e) {
 			System.out.println("Error Generating Revenue...Returning to Main Menu...");
 			e.printStackTrace();
@@ -418,6 +490,7 @@ public class InnReservations {
 					break;
 				case 2:
 					System.out.println("\n\n--- RESERVATIONS ---");
+					sc.nextLine();
 					MakeReservation(conn, sc);
 					break;
 				case 3:
@@ -442,4 +515,3 @@ public class InnReservations {
 		}
 	}
 }
-
